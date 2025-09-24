@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CycleFem - Inscription</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body class="auth-page">
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-md-6 col-lg-5">
+                <div class="auth-card">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-heart-pulse text-primary fs-1"></i>
+                        <h1 class="h3 fw-bold text-primary">CycleFem</h1>
+                        <p class="text-muted">Créez votre compte</p>
+                    </div>
+
+                    <div class="text-center mb-4">
+                        <img src="https://pixabay.com/get/g746452ba105a306da89d46bdf85b9515fb77114424e0b609f7bf475f9884446036ef164ff0572659fbc2c675ef8965548e22593cca879a91f2d3829a808fc3dc_1280.jpg" 
+                             alt="Soins féminins" class="img-fluid rounded" style="max-height: 150px;">
+                    </div>
+
+                    <form id="register-form">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nom complet</label>
+                            <input type="text" class="form-control" id="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" id="password" required minlength="6">
+                            <div class="form-text">Au moins 6 caractères</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm-password" class="form-label">Confirmer le mot de passe</label>
+                            <input type="password" class="form-control" id="confirm-password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cycle-length" class="form-label">Durée habituelle du cycle (jours)</label>
+                            <input type="number" class="form-control" id="cycle-length" value="28" min="21" max="35" required>
+                            <div class="form-text">Entre 21 et 35 jours (par défaut: 28)</div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="privacy-policy" required>
+                            <label class="form-check-label" for="privacy-policy">
+                                J'accepte que mes données soient traitées de manière confidentielle
+                            </label>
+                        </div>
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary">
+                                <span id="register-spinner" class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
+                                Créer mon compte
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center">
+                        <p class="text-muted">Déjà un compte ?</p>
+                        <a href="login.html" class="btn btn-outline-primary">Se connecter</a>
+                    </div>
+
+                    <div id="error-message" class="alert alert-danger d-none mt-3" role="alert"></div>
+                    <div id="success-message" class="alert alert-success d-none mt-3" role="alert"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Check if already logged in
+        if (localStorage.getItem('token')) {
+            window.location.href = '/';
+        }
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const cycleLength = parseInt(document.getElementById('cycle-length').value);
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const spinner = document.getElementById('register-spinner');
+            const errorDiv = document.getElementById('error-message');
+            const successDiv = document.getElementById('success-message');
+            
+            // Hide previous messages
+            errorDiv.classList.add('d-none');
+            successDiv.classList.add('d-none');
+            
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'Les mots de passe ne correspondent pas';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            spinner.classList.remove('d-none');
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    successDiv.textContent = 'Compte créé avec succès ! Redirection...';
+                    successDiv.classList.remove('d-none');
+                    
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    errorDiv.textContent = data.error || 'Erreur lors de la création du compte';
+                    errorDiv.classList.remove('d-none');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Erreur de connexion au serveur';
+                errorDiv.classList.remove('d-none');
+            } finally {
+                submitBtn.disabled = false;
+                spinner.classList.add('d-none');
+            }
+        });
+    </script>
+</body>
+</html>
